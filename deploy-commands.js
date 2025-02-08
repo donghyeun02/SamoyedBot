@@ -4,7 +4,6 @@ const fs = require('fs');
 const path = require('path');
 
 const clientId = process.env.CLIENT_ID;
-const guildId = process.env.GUILD_ID;
 const token = process.env.TOKEN;
 
 const commands = [];
@@ -15,7 +14,6 @@ const commandFiles = fs
 for (const file of commandFiles) {
   const commandModule = require(`./commands/${file}`);
 
-  // ✅ commandModule이 배열인지 확인 후 처리
   if (Array.isArray(commandModule)) {
     for (const command of commandModule) {
       if (command.data) {
@@ -25,7 +23,6 @@ for (const file of commandFiles) {
       }
     }
   } else {
-    // 단일 명령어일 경우 처리
     if (commandModule.data) {
       commands.push(commandModule.data.toJSON());
     } else {
@@ -38,11 +35,11 @@ const rest = new REST({ version: '10' }).setToken(token);
 
 (async () => {
   try {
-    console.log('⏳ 명령어를 등록 중입니다...');
-    await rest.put(Routes.applicationGuildCommands(clientId, guildId), {
+    console.log('⏳  명령어를 등록 중입니다...');
+    await rest.put(Routes.applicationCommands(clientId), {
       body: commands,
     });
-    console.log('✅ 명령어가 성공적으로 등록되었습니다!');
+    console.log('✅  명령어가 성공적으로 등록되었습니다!');
   } catch (error) {
     console.error(error);
   }
