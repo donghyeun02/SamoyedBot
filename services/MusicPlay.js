@@ -25,8 +25,12 @@ module.exports = {
       dynamic: true,
     });
 
-    // ✅ yt-dlp 명령어 설정 (쿠키 적용)
     const ytDlpArgs = [
+      '--extractor-args',
+      'youtube:player_client=android',
+      '--cookies',
+      process.env.COOKIES_PATH,
+      '--force-ipv4',
       '-f',
       'bestaudio',
       '--no-playlist',
@@ -37,7 +41,6 @@ module.exports = {
       song.url,
     ];
 
-    // ✅ 쿠키 파일이 존재하면 yt-dlp 실행 시 쿠키 추가
     if (fs.existsSync(cookiesPath)) {
       ytDlpArgs.push('--cookies', cookiesPath);
     } else {
