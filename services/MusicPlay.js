@@ -17,8 +17,16 @@ const YouTubeService = require('../utils/YoutubeService');
 const ytDlpPath = process.env.YT_DLP_PATH || 'yt-dlp';
 const cookiesPath = process.env.COOKIES_PATH;
 
+let currentProcess = null; // 🔹 현재 실행 중인 yt-dlp 프로세스를 저장
+
 module.exports = {
   async playSong(connection, song, interaction) {
+    if (currentProcess) {
+      console.log('⏹️ 이전 yt-dlp 프로세스를 종료합니다.');
+      currentProcess.kill(); // 🔹 기존 프로세스 강제 종료
+      currentProcess = null;
+    }
+
     const requester = interaction.user.username;
     const requesterAvatar = interaction.user.displayAvatarURL({
       dynamic: true,
@@ -48,6 +56,8 @@ module.exports = {
       stdio: ['ignore', 'pipe', 'pipe'],
     });
 
+    currentProcess = ytDlpProcess; // 🔹 현재 실행 중인 yt-dlp 프로세스를 저장
+
     ytDlpProcess.stderr.on('data', (data) => {
       console.error(`yt-dlp error: ${data.toString()}`);
     });
@@ -58,10 +68,12 @@ module.exports = {
     });
 
     ytDlpProcess.on('close', (code) => {
-      if (code !== 0) {
-        console.error(`yt-dlp 프로세스 종료 코드: ${code}`);
-        interaction.followUp(':x: yt-dlp가 비정상적으로 종료되었습니다.');
+      if (code === 0) {
+        console.log('✅ yt-dlp 프로세스가 정상적으로 종료되었습니다.');
+      } else {
+        console.log(`⚠️ yt-dlp 프로세스가 종료됨 (코드: ${code})`);
       }
+      currentProcess = null; // 🔹 프로세스가 종료되면 변수 초기화
     });
 
     const resource = createAudioResource(ytDlpProcess.stdout);
@@ -107,7 +119,7 @@ module.exports = {
         player.on(AudioPlayerStatus.Idle, () => {
           const nextSong = Queue.skipSong(guildId);
           if (nextSong) {
-            this.playSong(connection, nextSong, interaction);
+            module.exports.playSong(connection, nextSong, interaction);
           } else {
             Queue.clearQueue(guildId, connection);
           }
@@ -126,6 +138,14 @@ module.exports = {
     } catch (error) {
       console.error(':x: 음악 재생 오류:', error);
       interaction.followUp(':x: 노래를 재생하는 중 오류가 발생했습니다.');
+    }
+  },
+
+  stopCurrentProcess() {
+    if (currentProcess) {
+      console.log('⏹️ 현재 실행 중인 yt-dlp 프로세스를 종료합니다.');
+      currentProcess.kill();
+      currentProcess = null;
     }
   },
 };
