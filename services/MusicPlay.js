@@ -6,10 +6,14 @@ const {
   getVoiceConnection,
 } = require('@discordjs/voice');
 
-const { spawn } = require('child_process'); // yt-dlp 실행을 위한 spawn 사용
+const { spawn } = require('child_process');
+require('dotenv').config();
+
 const Queue = require('../models/Queue');
 const MusicView = require('../views/MusicView');
 const YouTubeService = require('../utils/YoutubeService');
+
+const ytDlpPath = process.env.YT_DLP_PATH || 'yt-dlp';
 
 module.exports = {
   async playSong(connection, song, interaction) {
@@ -18,9 +22,8 @@ module.exports = {
       dynamic: true,
     });
 
-    // ✅ yt-dlp를 사용하여 오디오 스트림을 가져오기
     const process = spawn(
-      'yt-dlp',
+      ytDlpPath,
       [
         '-f',
         'bestaudio',
