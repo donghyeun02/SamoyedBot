@@ -47,7 +47,11 @@ module.exports = {
     }
 
     const process = spawn(ytDlpPath, ytDlpArgs, {
-      stdio: ['ignore', 'pipe', 'ignore'],
+      stdio: ['ignore', 'pipe', 'pipe'],
+    });
+
+    process.stderr.on('data', (data) => {
+      console.error(`yt-dlp error: ${data.toString()}`);
     });
 
     const resource = createAudioResource(process.stdout);
