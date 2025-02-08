@@ -5,28 +5,35 @@ const {
   AudioPlayerStatus,
   getVoiceConnection,
 } = require('@discordjs/voice');
+const fs = require('fs'); // ✅ fs 모듈 추가
+const path = require('path'); // ✅ path 모듈 추가
 const ytdl = require('@distube/ytdl-core');
 const Queue = require('../models/Queue');
 const MusicView = require('../views/MusicView');
 const YouTubeService = require('../utils/YoutubeService');
 
+const cookiePath = path.join(__dirname, '../cookies.txt');
+
 module.exports = {
-  async playSong(interaction, song) {
+  async playSong(connection, song, interaction) {
+    let cookies = null;
+    if (fs.existsSync(cookiePath)) {
+      cookies = fs.readFileSync(cookiePath, 'utf8').trim();
+    }
+
     const requester = interaction.user.username;
     const requesterAvatar = interaction.user.displayAvatarURL({
       dynamic: true,
     });
 
-    const stream = ytdl('https://www.youtube.com/watch?v=video_id', {
-      cookies: cookies,
+    const stream = ytdl(song.url, {
       filter: 'audioonly',
       quality: 'highestaudio',
       highWaterMark: 1 << 25,
-    }).pipe(fs.createWriteStream('output.mp3'));
+      cookies: cookies,
+    });
 
     const resource = createAudioResource(stream);
-    const guildId = interaction.guild.id;
-    const connection = getVoiceConnection(guildId);
 
     if (connection) {
       connection.player.play(resource);
@@ -67,7 +74,7 @@ module.exports = {
         player.on(AudioPlayerStatus.Idle, () => {
           const nextSong = Queue.skipSong(guildId);
           if (nextSong) {
-            this.playSong(interaction, nextSong);
+            this.playSong(connection, nextSong, interaction);
           } else {
             Queue.clearQueue(guildId, connection);
           }
@@ -77,7 +84,7 @@ module.exports = {
       }
 
       if (Queue.getQueueList(guildId).length === 1) {
-        this.playSong(interaction, song);
+        this.playSong(connection, song, interaction);
       } else {
         interaction.followUp(
           `🎵   **${song.title}**이(가) 대기열에 추가되었습니다.`
