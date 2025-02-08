@@ -7,6 +7,8 @@ const {
 } = require('@discordjs/voice');
 
 const { spawn } = require('child_process');
+const fs = require('fs');
+const path = require('path');
 require('dotenv').config();
 
 const Queue = require('../models/Queue');
@@ -14,6 +16,7 @@ const MusicView = require('../views/MusicView');
 const YouTubeService = require('../utils/YoutubeService');
 
 const ytDlpPath = process.env.YT_DLP_PATH || 'yt-dlp';
+const cookiesPath = path.join(__dirname, './cookies.txt');
 
 module.exports = {
   async playSong(connection, song, interaction) {
@@ -22,20 +25,30 @@ module.exports = {
       dynamic: true,
     });
 
-    const process = spawn(
-      ytDlpPath,
-      [
-        '-f',
-        'bestaudio',
-        '--no-playlist',
-        '--quiet',
-        '--print-json',
-        '-o',
-        '-',
-        song.url,
-      ],
-      { stdio: ['ignore', 'pipe', 'ignore'] }
-    );
+    // ✅ yt-dlp 명령어 설정 (쿠키 적용)
+    const ytDlpArgs = [
+      '-f',
+      'bestaudio',
+      '--no-playlist',
+      '--quiet',
+      '--print-json',
+      '-o',
+      '-',
+      song.url,
+    ];
+
+    // ✅ 쿠키 파일이 존재하면 yt-dlp 실행 시 쿠키 추가
+    if (fs.existsSync(cookiesPath)) {
+      ytDlpArgs.push('--cookies', cookiesPath);
+    } else {
+      console.warn(
+        '⚠️ Warning: `cookies.txt` 파일이 없습니다. 로그인된 영상은 재생할 수 없습니다.'
+      );
+    }
+
+    const process = spawn(ytDlpPath, ytDlpArgs, {
+      stdio: ['ignore', 'pipe', 'ignore'],
+    });
 
     const resource = createAudioResource(process.stdout);
 
