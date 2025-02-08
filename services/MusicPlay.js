@@ -17,11 +17,12 @@ module.exports = {
       dynamic: true,
     });
 
-    const stream = ytdl(song.url, {
+    const stream = ytdl('https://www.youtube.com/watch?v=video_id', {
+      cookies: cookies,
       filter: 'audioonly',
       quality: 'highestaudio',
       highWaterMark: 1 << 25,
-    });
+    }).pipe(fs.createWriteStream('output.mp3'));
 
     const resource = createAudioResource(stream);
     const guildId = interaction.guild.id;
