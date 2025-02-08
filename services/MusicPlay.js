@@ -8,7 +8,6 @@ const {
 
 const { spawn } = require('child_process');
 const fs = require('fs');
-const path = require('path');
 require('dotenv').config();
 
 const Queue = require('../models/Queue');
@@ -16,7 +15,7 @@ const MusicView = require('../views/MusicView');
 const YouTubeService = require('../utils/YoutubeService');
 
 const ytDlpPath = process.env.YT_DLP_PATH || 'yt-dlp';
-const cookiesPath = path.join(__dirname, './cookies.txt');
+const cookiesPath = process.env.COOKIES_PATH;
 
 module.exports = {
   async playSong(connection, song, interaction) {
@@ -28,8 +27,6 @@ module.exports = {
     const ytDlpArgs = [
       '--extractor-args',
       'youtube:player_client=android',
-      '--cookies',
-      process.env.COOKIES_PATH,
       '--force-ipv4',
       '-f',
       'bestaudio',
@@ -41,7 +38,7 @@ module.exports = {
       song.url,
     ];
 
-    if (fs.existsSync(cookiesPath)) {
+    if (cookiesPath && fs.existsSync(cookiesPath)) {
       ytDlpArgs.push('--cookies', cookiesPath);
     } else {
       console.warn(
@@ -49,17 +46,17 @@ module.exports = {
       );
     }
 
-    const process = spawn(ytDlpPath, ytDlpArgs, {
+    const ytDlpProcess = spawn(ytDlpPath, ytDlpArgs, {
       stdio: ['ignore', 'pipe', 'pipe'],
     });
 
-    process.stderr.on('data', (data) => {
+    ytDlpProcess.stderr.on('data', (data) => {
       console.error(`yt-dlp error: ${data.toString()}`);
     });
 
-    const resource = createAudioResource(process.stdout);
+    const resource = createAudioResource(ytDlpProcess.stdout);
 
-    if (connection) {
+    if (connection && connection.player) {
       connection.player.play(resource);
       interaction.followUp({
         embeds: [MusicView.nowPlaying(song, requester, requesterAvatar)],
@@ -71,13 +68,15 @@ module.exports = {
 
   async handlePlay(interaction, query) {
     const voiceChannel = interaction.member.voice.channel;
-    if (!voiceChannel)
+    if (!voiceChannel) {
       return interaction.followUp(':x: 음성 채널에 먼저 들어가주세요!');
+    }
 
     try {
       const song = await YouTubeService.search(query);
-      if (!song)
+      if (!song) {
         return interaction.followUp(':x: 해당 노래를 찾을 수 없습니다.');
+      }
 
       const guildId = interaction.guild.id;
       Queue.addSong(guildId, song);
