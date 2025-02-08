@@ -25,8 +25,6 @@ module.exports = {
     });
 
     const ytDlpArgs = [
-      '--extractor-args',
-      'youtube:player_client=android',
       '--force-ipv4',
       '-f',
       'bestaudio',
@@ -47,7 +45,7 @@ module.exports = {
     }
 
     const ytDlpProcess = spawn(ytDlpPath, ytDlpArgs, {
-      stdio: ['ignore', 'pipe', 'pipe'],
+      stdio: ['ignore', 'pipe', 'ignore'],
     });
 
     ytDlpProcess.stderr.on('data', (data) => {
