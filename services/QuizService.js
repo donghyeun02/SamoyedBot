@@ -1,51 +1,43 @@
 const fs = require('fs');
 const path = require('path');
 
-const songsFilePath = path.join(__dirname, '../data/songs.json');
-let currentQuiz = {};
+const songsData = JSON.parse(
+  fs.readFileSync(path.join(__dirname, '../data/songs.json'), 'utf8')
+);
 
-function loadSongs() {
-  try {
-    const data = fs.readFileSync(songsFilePath, 'utf-8');
-    return JSON.parse(data);
-  } catch (error) {
-    console.error('❌ 노래 데이터를 불러오는 중 오류 발생:', error);
-    return {};
-  }
+let scores = {};
+let currentQuiz = {};
+let quizParticipants = {};
+
+const scoreFilePath = path.join(__dirname, '../data/scores.json');
+
+function saveScores() {
+  fs.writeFileSync(scoreFilePath, JSON.stringify(scores, null, 2));
 }
 
-function getSongsByYearRange(yearRange) {
-  const songDB = loadSongs();
-  const songs = [];
-
-  if (yearRange.includes('-')) {
-    const [startYear, endYear] = yearRange.split('-').map(Number);
-    for (let year = startYear; year <= endYear; year++) {
-      if (songDB[year]) {
-        songs.push(...songDB[year]);
-      }
-    }
-  } else {
-    const year = Number(yearRange);
-    if (songDB[year]) {
-      songs.push(...songDB[year]);
-    }
-  }
-
-  return songs.length > 0 ? songs : null;
+if (fs.existsSync(scoreFilePath)) {
+  scores = JSON.parse(fs.readFileSync(scoreFilePath, 'utf8'));
 }
 
 module.exports = {
-  currentQuiz,
+  async getRandomSong(selectedYears, guildId, voiceChannel) {
+    let allSongs = [];
 
-  async getRandomSong(yearRange, guildId) {
-    const songs = getSongsByYearRange(yearRange);
-    if (!songs) {
-      throw new Error('❌ 해당 연도 범위에 대한 노래 데이터가 없습니다.');
-    }
+    selectedYears.forEach((year) => {
+      if (songsData[year]) {
+        allSongs = allSongs.concat(songsData[year]);
+      }
+    });
 
-    const randomSong = songs[Math.floor(Math.random() * songs.length)];
+    if (allSongs.length === 0) return null;
+
+    const randomSong = allSongs[Math.floor(Math.random() * allSongs.length)];
     currentQuiz[guildId] = randomSong;
+
+    quizParticipants[guildId] = voiceChannel.members.map(
+      (member) => member.user.id
+    );
+
     return randomSong;
   },
 
@@ -54,12 +46,49 @@ module.exports = {
       return { correct: false, correctTitle: null };
     }
 
-    const correctTitle = currentQuiz[guildId].title;
-    if (guess.toLowerCase() === correctTitle.toLowerCase()) {
+    const correctTitle = currentQuiz[guildId].title.toLowerCase();
+    const userId = interaction.user.id;
+    const userName = interaction.user.username;
+
+    const voiceChannel = interaction.member.voice.channel;
+    if (!voiceChannel) {
+      return {
+        correct: false,
+        correctTitle,
+        message: '❌ 음성 채널에 있어야 정답을 맞힐 수 있습니다!',
+      };
+    }
+
+    if (
+      !quizParticipants[guildId] ||
+      !quizParticipants[guildId].includes(userId)
+    ) {
+      return {
+        correct: false,
+        correctTitle,
+        message: '❌ 퀴즈 시작 당시 참가자만 정답을 입력할 수 있습니다!',
+      };
+    }
+
+    if (guess.toLowerCase() === correctTitle) {
+      if (!scores[guildId]) scores[guildId] = {};
+      if (!scores[guildId][userId])
+        scores[guildId][userId] = { name: userName, points: 0 };
+
+      scores[guildId][userId].points += 1;
+      saveScores();
+
       delete currentQuiz[guildId];
+      delete quizParticipants[guildId];
+
       return { correct: true, correctTitle };
     }
 
     return { correct: false, correctTitle };
+  },
+
+  async getScores(guildId) {
+    if (!scores[guildId]) return {};
+    return scores[guildId];
   },
 };
