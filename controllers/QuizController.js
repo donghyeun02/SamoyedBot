@@ -1,37 +1,39 @@
+const QuizService = require('../services/QuizService');
 const QuizView = require('../views/QuizView');
-const YouTubeService = require('../utils/YoutubeService');
-let currentQuiz = null;
 
 module.exports = {
-  async start(interaction) {
-    if (currentQuiz) {
-      return QuizView.alreadyRunning(interaction);
-    }
-
-    const song = await YouTubeService.getRandomSong();
-    currentQuiz = { title: song.title, url: song.url };
-
-    await QuizView.start(interaction, song.url);
-
-    setTimeout(() => {
-      if (currentQuiz) {
-        QuizView.timeUp(interaction, currentQuiz.title);
-        currentQuiz = null;
-      }
-    }, 30000); // 30초 제한
+  async showStartMenu(interaction) {
+    await QuizView.showStartMenu(interaction);
   },
 
-  async guess(interaction) {
-    const guess = interaction.options.getString('정답');
-    if (!currentQuiz) {
-      return QuizView.noQuizRunning(interaction);
-    }
+  async handleYearSelection(interaction, yearRange) {
+    const guildId = interaction.guild.id;
+    try {
+      const song = await QuizService.getRandomSong(yearRange, guildId);
+      if (!song) {
+        return interaction.update('❌ 해당 연도의 노래 데이터가 없습니다.');
+      }
 
-    if (guess.toLowerCase() === currentQuiz.title.toLowerCase()) {
-      QuizView.correct(interaction, currentQuiz.title);
-      currentQuiz = null;
-    } else {
-      QuizView.incorrect(interaction);
+      await QuizView.startQuiz(interaction, song);
+
+      setTimeout(async () => {
+        if (QuizService.currentQuiz[guildId]) {
+          await interaction.followUp(
+            `⏰ 시간이 초과되었습니다! 정답은 **${song.title}** 입니다.`
+          );
+          delete QuizService.currentQuiz[guildId];
+        }
+      }, 60000);
+    } catch (error) {
+      console.error('❌ 퀴즈 시작 중 오류:', error);
+      interaction.reply('⚠️ 퀴즈를 시작하는 중 오류가 발생했습니다.');
     }
+  },
+
+  async checkAnswer(interaction) {
+    const guess = interaction.options.getString('정답').toLowerCase();
+    const guildId = interaction.guild.id;
+    const result = await QuizService.checkAnswer(interaction, guess, guildId);
+    await QuizView.showResult(interaction, result.correctTitle, guess);
   },
 };

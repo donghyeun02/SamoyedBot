@@ -3,6 +3,8 @@ const fs = require('fs');
 const path = require('path');
 require('dotenv').config();
 
+const QuizController = require('./controllers/QuizController');
+
 const client = new Client({
   intents: [
     GatewayIntentBits.Guilds,
@@ -43,23 +45,30 @@ client.once('ready', () => {
 });
 
 client.on('interactionCreate', async (interaction) => {
-  if (!interaction.isCommand()) return;
+  if (interaction.isCommand()) {
+    const command = client.commands.get(interaction.commandName);
+    if (!command)
+      return interaction.reply({
+        content: '❌ 알 수 없는 명령어입니다.',
+        ephemeral: true,
+      });
 
-  const command = client.commands.get(interaction.commandName);
-  if (!command)
-    return interaction.reply({
-      content: '❌ 알 수 없는 명령어입니다.',
-      ephemeral: true,
-    });
-
-  try {
-    await command.execute(interaction);
-  } catch (error) {
-    console.error('❌ 명령어 실행 중 오류 발생:', error);
-    await interaction.reply({
-      content: '⚠️ 명령어 실행 중 오류가 발생했습니다.',
-      ephemeral: true,
-    });
+    try {
+      await command.execute(interaction);
+    } catch (error) {
+      console.error('❌ 명령어 실행 중 오류 발생:', error);
+      await interaction.reply({
+        content: '⚠️ 명령어 실행 중 오류가 발생했습니다.',
+        ephemeral: true,
+      });
+    }
+  } else if (interaction.isStringSelectMenu()) {
+    if (interaction.customId === 'select_year') {
+      await QuizController.handleYearSelection(
+        interaction,
+        interaction.values[0]
+      );
+    }
   }
 });
 
