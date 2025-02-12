@@ -6,9 +6,30 @@ module.exports = {
     });
   },
 
-  async startQuiz(interaction, song) {
+  async startQuiz(interaction, song, connection) {
+    const player = createAudioPlayer();
+    connection.subscribe(player);
+
+    // 🎵 yt-dlp를 이용해 음성 채널에서 노래 재생
+    const ytDlpProcess = spawn('yt-dlp', [
+      '--no-playlist',
+      '--quiet',
+      '-f',
+      'bestaudio',
+      '-o',
+      '-',
+      song.url,
+    ]);
+
+    const resource = createAudioResource(ytDlpProcess.stdout);
+    player.play(resource);
+
+    player.on(AudioPlayerStatus.Idle, () => {
+      ytDlpProcess.kill();
+    });
+
     await interaction.editReply({
-      content: `🎶 퀴즈 시작! 아래 노래를 들어보세요: ${song.url}`,
+      content: `🎵 노래가 재생 중입니다. 제목을 맞춰보세요!`,
       components: [],
     });
   },
