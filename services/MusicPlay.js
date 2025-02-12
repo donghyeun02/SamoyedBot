@@ -17,13 +17,13 @@ const YouTubeService = require('../utils/YoutubeService');
 const ytDlpPath = process.env.YT_DLP_PATH || 'yt-dlp';
 const cookiesPath = process.env.COOKIES_PATH;
 
-let currentProcess = null; // 🔹 현재 실행 중인 yt-dlp 프로세스를 저장
+let currentProcess = null;
 
 module.exports = {
   async playSong(connection, song, interaction) {
     if (currentProcess) {
       console.log('⏹️ 이전 yt-dlp 프로세스를 종료합니다.');
-      currentProcess.kill(); // 🔹 기존 프로세스 강제 종료
+      currentProcess.kill();
       currentProcess = null;
     }
 
@@ -56,7 +56,7 @@ module.exports = {
       stdio: ['ignore', 'pipe', 'pipe'],
     });
 
-    currentProcess = ytDlpProcess; // 🔹 현재 실행 중인 yt-dlp 프로세스를 저장
+    currentProcess = ytDlpProcess;
 
     ytDlpProcess.stderr.on('data', (data) => {
       console.error(`yt-dlp error: ${data.toString()}`);
@@ -73,7 +73,7 @@ module.exports = {
       } else {
         console.log(`⚠️ yt-dlp 프로세스가 종료됨 (코드: ${code})`);
       }
-      currentProcess = null; // 🔹 프로세스가 종료되면 변수 초기화
+      currentProcess = null;
     });
 
     const resource = createAudioResource(ytDlpProcess.stdout);
