@@ -3,26 +3,26 @@ const QuizView = require('../views/QuizView');
 
 module.exports = {
   async handleYearSelection(interaction, selectedYears) {
-    await interaction.deferUpdate();
-
-    const guildId = interaction.guild.id;
-    const voiceChannel = interaction.member.voice.channel;
-
-    if (!voiceChannel) {
-      return interaction.reply({
-        content: '❌ 음성 채널에 들어가 있어야 퀴즈를 시작할 수 있습니다.',
-        ephemeral: true,
-      });
-    }
-
     try {
+      await interaction.deferUpdate();
+
+      const guildId = interaction.guild.id;
+      const voiceChannel = interaction.member.voice.channel;
+
+      if (!voiceChannel) {
+        return await interaction.editReply({
+          content: '❌ 음성 채널에 들어가 있어야 퀴즈를 시작할 수 있습니다.',
+          components: [],
+        });
+      }
+
       const song = await QuizService.getRandomSong(
         selectedYears,
         guildId,
         voiceChannel
       );
       if (!song) {
-        return interaction.update({
+        return await interaction.editReply({
           content: '❌ 해당 연도의 노래 데이터가 없습니다.',
           components: [],
         });
@@ -32,15 +32,15 @@ module.exports = {
 
       setTimeout(async () => {
         if (QuizService.currentQuiz[guildId]) {
-          await interaction.followUp(
-            `⏰ 시간이 초과되었습니다! 정답은 **${song.title}** 입니다.`
-          );
+          await interaction.followUp({
+            content: `⏰ 시간이 초과되었습니다! 정답은 **${song.title}** 입니다.`,
+          });
           delete QuizService.currentQuiz[guildId];
         }
       }, 60000);
     } catch (error) {
       console.error('❌ 퀴즈 시작 중 오류:', error);
-      interaction.reply({
+      await interaction.followUp({
         content: '⚠️ 퀴즈를 시작하는 중 오류가 발생했습니다.',
         ephemeral: true,
       });

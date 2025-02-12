@@ -1,25 +1,36 @@
 module.exports = {
   alreadyRunning(interaction) {
-    interaction.reply('❌ 이미 퀴즈가 진행 중입니다!');
+    interaction.reply({
+      content: '❌ 이미 퀴즈가 진행 중입니다!',
+      ephemeral: true,
+    });
   },
 
-  startQuiz(interaction, song) {
-    interaction.followUp(`🎶 퀴즈 시작! 아래 노래를 들어보세요: ${song.url}`);
+  async startQuiz(interaction, song) {
+    await interaction.editReply({
+      content: `🎶 퀴즈 시작! 아래 노래를 들어보세요: ${song.url}`,
+      components: [],
+    });
   },
 
   async showResult(interaction, correctTitle, guess, isCorrect) {
     if (isCorrect) {
-      interaction.reply(
+      await interaction.followUp(
         `✅ 정답입니다! 🎉: **${correctTitle}**\n+1점이 추가되었습니다!`
       );
     } else {
-      interaction.reply(`❌ 오답입니다. 정답은 **${correctTitle}**입니다.`);
+      await interaction.followUp(
+        `❌ 오답입니다. 정답은 **${correctTitle}**입니다.`
+      );
     }
   },
 
   async showScores(interaction, scores) {
     if (!scores || Object.keys(scores).length === 0) {
-      return interaction.reply('📊 현재 점수가 없습니다.');
+      return interaction.reply({
+        content: '📊 현재 점수가 없습니다.',
+        ephemeral: true,
+      });
     }
 
     let leaderboard = Object.values(scores)
@@ -29,6 +40,6 @@ module.exports = {
       )
       .join('\n');
 
-    interaction.reply(`📊 **현재 순위:**\n${leaderboard}`);
+    await interaction.followUp(`📊 **현재 순위:**\n${leaderboard}`);
   },
 };
