@@ -4,6 +4,7 @@ const {
   StringSelectMenuBuilder,
   ButtonBuilder,
   ButtonStyle,
+  MessageFlags,
 } = require('discord.js');
 const fs = require('fs');
 const path = require('path');
@@ -45,7 +46,7 @@ module.exports = {
     await interaction.reply({
       content: '🎵 연도를 선택한 후 "게임 시작"을 눌러주세요!',
       components: [row, buttonRow],
-      ephemeral: true,
+      flags: MessageFlags.Ephemeral,
     });
   },
 };
