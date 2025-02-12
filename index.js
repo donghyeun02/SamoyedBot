@@ -72,9 +72,8 @@ client.on('interactionCreate', async (interaction) => {
     }
   } else if (interaction.isStringSelectMenu()) {
     if (interaction.customId === 'select_years') {
-      await interaction.deferUpdate();
-
       const selectedYears = interaction.values;
+
       const startButton = new ButtonBuilder()
         .setCustomId('start_quiz')
         .setLabel('게임 시작 🎵')
@@ -83,7 +82,7 @@ client.on('interactionCreate', async (interaction) => {
 
       const buttonRow = new ActionRowBuilder().addComponents(startButton);
 
-      await interaction.editReply({
+      await interaction.update({
         content: `✅ 선택된 연도: ${selectedYears.join(
           ', '
         )}년\n"게임 시작"을 눌러주세요!`,
@@ -94,7 +93,11 @@ client.on('interactionCreate', async (interaction) => {
     }
   } else if (interaction.isButton()) {
     if (interaction.customId === 'start_quiz') {
-      await interaction.deferUpdate();
+      await interaction.reply({
+        content: '🎵 퀴즈를 시작합니다! 노래가 곧 재생됩니다.',
+        ephemeral: false,
+      });
+
       await QuizController.startQuiz(interaction);
     }
   }
