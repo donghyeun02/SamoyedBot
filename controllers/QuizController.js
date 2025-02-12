@@ -23,6 +23,7 @@ const cookiesPath = process.env.COOKIES_PATH;
 
 let currentProcess = null;
 let selectedYearsMap = {};
+let quizParticipants = {};
 
 module.exports = {
   async handleYearSelection(interaction, selectedYears) {
@@ -84,6 +85,8 @@ module.exports = {
           ephemeral: true,
         });
       }
+
+      quizParticipants[guildId] = Array.from(voiceChannel.members.keys());
 
       await this.playSong(connection, song, interaction);
 
@@ -182,6 +185,16 @@ module.exports = {
       .getTextInputValue('answer_text')
       .toLowerCase();
     const guildId = interaction.guild.id;
+    const userId = interaction.user.id;
+
+    if (!quizParticipants[guildId]?.includes(userId)) {
+      return interaction.reply({
+        content:
+          '❌ 퀴즈 시작 당시 음성 채널에 있었던 사람만 정답을 입력할 수 있습니다!',
+        ephemeral: true,
+      });
+    }
+
     const result = await QuizService.checkAnswer(interaction, guess, guildId);
 
     if (result.message) {
