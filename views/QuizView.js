@@ -4,7 +4,7 @@ module.exports = {
   },
 
   startQuiz(interaction, song) {
-    interaction.reply(`🎶 퀴즈 시작! 아래 노래를 들어보세요: ${song.url}`);
+    interaction.editReply(`🎶 퀴즈 시작! 아래 노래를 들어보세요: ${song.url}`);
   },
 
   async showResult(interaction, correctTitle, guess, isCorrect) {

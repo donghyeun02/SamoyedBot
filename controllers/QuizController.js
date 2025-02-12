@@ -3,6 +3,8 @@ const QuizView = require('../views/QuizView');
 
 module.exports = {
   async handleYearSelection(interaction, selectedYears) {
+    await interaction.deferUpdate();
+
     const guildId = interaction.guild.id;
     const voiceChannel = interaction.member.voice.channel;
 
