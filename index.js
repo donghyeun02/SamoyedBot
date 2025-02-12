@@ -63,11 +63,31 @@ client.on('interactionCreate', async (interaction) => {
       });
     }
   } else if (interaction.isStringSelectMenu()) {
-    if (interaction.customId === 'select_year') {
-      await QuizController.handleYearSelection(
-        interaction,
-        interaction.values[0]
-      );
+    if (interaction.customId === 'select_years') {
+      await interaction.deferUpdate();
+
+      const selectedYears = interaction.values;
+      const startButton = new ButtonBuilder()
+        .setCustomId('start_quiz')
+        .setLabel('게임 시작 🎵')
+        .setStyle(ButtonStyle.Primary)
+        .setDisabled(false);
+
+      const buttonRow = new ActionRowBuilder().addComponents(startButton);
+
+      await interaction.editReply({
+        content: `✅ 선택된 연도: ${selectedYears.join(
+          ', '
+        )}년\n"게임 시작"을 눌러주세요!`,
+        components: [buttonRow],
+      });
+
+      await QuizController.handleYearSelection(interaction, selectedYears);
+    }
+  } else if (interaction.isButton()) {
+    if (interaction.customId === 'start_quiz') {
+      await interaction.deferUpdate();
+      await QuizController.startQuiz(interaction);
     }
   }
 });
