@@ -1,4 +1,4 @@
-const Queue = require('../models/Queue'); // 여기에 Queue를 불러옵니다.
+const Queue = require('../models/Queue');
 const MusicView = require('../views/MusicView');
 
 module.exports = {

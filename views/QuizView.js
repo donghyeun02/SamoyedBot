@@ -10,7 +10,6 @@ module.exports = {
     const player = createAudioPlayer();
     connection.subscribe(player);
 
-    // 🎵 yt-dlp를 이용해 음성 채널에서 노래 재생
     const ytDlpProcess = spawn('yt-dlp', [
       '--no-playlist',
       '--quiet',

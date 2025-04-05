@@ -2,7 +2,6 @@ const { EmbedBuilder } = require('discord.js');
 
 module.exports = {
   nowPlaying(song, requester, requesterAvatar) {
-    // ✅ 신청자 아이콘 추가
     return new EmbedBuilder()
       .setTitle(`🎵   재생 중: ${song.title}`)
       .setURL(song.url)
